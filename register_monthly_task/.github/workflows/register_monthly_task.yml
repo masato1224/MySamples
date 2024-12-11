@@ -1,0 +1,17 @@
+name: 月末処理のissue作成とプロジェクトへのリンク
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'ブランチ名'
+        type: string
+
+jobs:
+  register_monthly_task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.ref }}
