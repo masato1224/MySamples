@@ -1,5 +1,6 @@
-const main = async () => {
+import { Octokit } from '@octokit/action'
 
+const main = async () => {
   if (!process.env.GITHUB_REPOSITORY) {
     throw new Error('GITHUB_REPOSITORY environment variable is not defined')
   }
@@ -13,8 +14,18 @@ const main = async () => {
   console.log('ownerName:', ownerName)
   console.log('repoName:', repoName)
   console.log('issueNumber:', issueNumber)
+
+  const octokit = new Octokit()
+  const response: { viewer: { login: string } } = await octokit.graphql(`{
+    viewer {
+      login
+    }
+  }`)
+  const {
+    viewer: { login }
+  } = response
+
+  console.log(`Hello, ${login}!`)
 }
-
-
 
 await main()
