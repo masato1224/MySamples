@@ -26,3 +26,24 @@ jobs:
         with:
           filename: .github/ISSUE_TEMPLATE/monthly_task.md
           assignees: ${{ matrix.assignee }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v4
+        with:
+          path: ./node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('./yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: execute
+        run: yarn tsx src/index.ts
+        env:
+          ISSUE_NUMBER: ${{ steps.create_issue.outputs.number }}
