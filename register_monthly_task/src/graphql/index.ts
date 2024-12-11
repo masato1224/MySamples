@@ -1,6 +1,7 @@
 import { Octokit } from '@octokit/action'
 import { print } from 'graphql'
 import { issueAndProject, ResIssueAndProject } from './graphql/query/issueAndProject.js'
+import { linkIssueToProject, ResLinkIssueToProject } from './graphql/mutation/linkIssueToProject.js'
 
 const main = async () => {
   if (!process.env.GITHUB_REPOSITORY) {
@@ -22,6 +23,7 @@ const main = async () => {
   const octokit = new Octokit()
 
   const issueAndProjectData = await fetchIssueAndProject(octokit, ownerName, repoName, issueNumber, projectNumber)
+  const projectItem = await AddProjectItem(octokit, issueAndProjectData)
 }
 
 const fetchIssueAndProject = async (
@@ -38,6 +40,14 @@ const fetchIssueAndProject = async (
     projectNumber
   })
   return response
+}
+
+const AddProjectItem = async (octokit: Octokit, issueAndProjectData: ResIssueAndProject) => {
+  const item = await octokit.graphql<ResLinkIssueToProject>(print(linkIssueToProject), {
+    projectId: issueAndProjectData.repository.projectV2.id,
+    issueId: issueAndProjectData.repository.issue.id
+  })
+  return item
 }
 
 await main()
