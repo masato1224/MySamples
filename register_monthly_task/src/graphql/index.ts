@@ -2,6 +2,7 @@ import { Octokit } from '@octokit/action'
 import { print } from 'graphql'
 import { issueAndProject, ResIssueAndProject } from './graphql/query/issueAndProject.js'
 import { linkIssueToProject, ResLinkIssueToProject } from './graphql/mutation/linkIssueToProject.js'
+import { ResUpdateProjectItem, updateProjectItem } from './graphql/mutation/updateProjectItem.js'
 
 const main = async () => {
   if (!process.env.GITHUB_REPOSITORY) {
@@ -24,6 +25,7 @@ const main = async () => {
 
   const issueAndProjectData = await fetchIssueAndProject(octokit, ownerName, repoName, issueNumber, projectNumber)
   const projectItem = await AddProjectItem(octokit, issueAndProjectData)
+  await updateIssueAttribute(octokit, issueAndProjectData, projectItem)
 }
 
 const fetchIssueAndProject = async (
@@ -49,5 +51,24 @@ const AddProjectItem = async (octokit: Octokit, issueAndProjectData: ResIssueAnd
   })
   return item
 }
+
+const updateIssueAttribute = async (
+  octokit: Octokit,
+  issueAndProjectData: ResIssueAndProject,
+  projectItem: ResLinkIssueToProject
+) => {
+  const optionsId = issueAndProjectData.repository.projectV2.category_field.options.find(
+    field => field.name === 'チーム運営'
+  )?.id
+  await octokit.graphql<ResUpdateProjectItem>(print(updateProjectItem), {
+    project_id: issueAndProjectData.repository.projectV2.id,
+    itemId: projectItem.addProjectV2ItemById.item.id,
+    sprintFieldId: issueAndProjectData.repository.projectV2.sprint_field.id,
+    iterationId: issueAndProjectData.repository.projectV2.sprint_field.configuration.iterations[0].id,
+    categoryFieldId: issueAndProjectData.repository.projectV2.category_field.id,
+    singleSelectOptionId: optionsId
+  })
+}
+
 
 await main()
