@@ -55,3 +55,4 @@ jobs:
         env:
           ISSUE_NUMBER: ${{ steps.create_issue.outputs.number }}
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          PROJECT_NUMBER: 1
