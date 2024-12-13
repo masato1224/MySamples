@@ -1,0 +1,60 @@
+name: 月末処理のissue作成とプロジェクトへのリンク
+
+on:
+  schedule:
+    - cron: '0 0 25 * *'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'ブランチ名'
+        type: string
+
+jobs:
+  register_monthly_task:
+    strategy:
+      matrix:
+        assignee: [member1, member2, member3]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.ref }}
+
+      - uses: JasonEtco/create-an-issue@v2.9.2
+        id: create_issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/ISSUE_TEMPLATE/monthly_task.md
+          assignees: ${{ matrix.assignee }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v4
+        with:
+          path: ./node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('./yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Generate token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PEM }}
+
+      - name: execute
+        run: yarn tsx src/index.ts
+        env:
+          ISSUE_NUMBER: ${{ steps.create_issue.outputs.number }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          PROJECT_NUMBER: 1
